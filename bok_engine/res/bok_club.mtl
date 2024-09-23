@@ -1,0 +1,12 @@
+# Blender 4.2.0 MTL File: 'None'
+# www.blender.org
+
+newmtl Handle1Mtl
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.062745 0.062745 0.062745
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+illum 2
+map_Kd C:/Users/bokch/Documents/roblox rigs/bok club 07092024/Handle1_diff.png
+map_d C:/Users/bokch/Documents/roblox rigs/bok club 07092024/Handle1_diff.png
