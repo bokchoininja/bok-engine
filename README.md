@@ -12,10 +12,10 @@ jars from lwjgl website if not using windows
 if you create animations in blender for this game you have to set the max weights to 3 
 and also remember to normalze all weights.  
 
-credit to:
-CodingAP for GLFW tutorials
-ThinMatrix for render engine tutorials
-Sopiro for animation code
+credit to:  
+CodingAP for GLFW tutorials  
+ThinMatrix for render engine tutorials  
+Sopiro for animation code  
 
 feel free to use this code in your own projects :)  
 credit is not required but appreciated!  
