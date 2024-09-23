@@ -9,5 +9,8 @@ add LWJGL3 with JOML jars, PNGDecoder jars and slickutil jars to project classpa
 the jars used work on windows 11. You may need to download other operating system  
 jars from lwjgl website if not using windows  
 
+if you create animations in blender for this game you have to set the max weights to 3 
+and also remember to normalze all weights.  
+
 feel free to use this code in your own projects :)  
 credit is not required but appreciated!  
