@@ -8,8 +8,8 @@ layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 texCoord;
 layout (location = 2) in vec3 normal;
 //layout (location = 3) in vec3 tangent;
-layout (location = 3) in vec3 bone_id;
-layout (location = 4) in vec3 weight;
+layout (location = 3) in vec4 bone_id;
+layout (location = 4) in vec4 weight;
 
 out vec2 tc;
 out vec3 n;
@@ -30,12 +30,13 @@ const float gradient = 1.5;
 void main()
 {
     //vec3 normalizedWeight = normalize(weight);
-    vec3 normalizedWeight = weight;
+    vec4 normalizedWeight = weight;
 
     mat4 boneTransformation =
     bones[uint(bone_id.x)] * normalizedWeight.x +
     bones[uint(bone_id.y)] * normalizedWeight.y +
-    bones[uint(bone_id.z)] * normalizedWeight.z;
+    bones[uint(bone_id.z)] * normalizedWeight.z +
+    bones[uint(bone_id.w)] * normalizedWeight.w;
 
     vec4 worldPosition = transformationMatrix * boneTransformation * vec4(position, 1.0);
     vec4 positionRelativeToCam = viewMatrix * worldPosition;

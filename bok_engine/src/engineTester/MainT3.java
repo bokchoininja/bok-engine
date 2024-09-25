@@ -149,7 +149,7 @@ public class MainT3 implements Runnable{
     
     private void create_player() {
         runner = new Material(loader.loadTextureS("blue.png"));
-        animatedModel = AnimationLoader.load(loader, "lpm21092024.fbx", runner.getTexture());
+        animatedModel = AnimationLoader.load(loader, "lpm25092024_4.fbx", runner.getTexture());
         player = new PlayerA(animatedModel, new Vector3f(65,0,65), new Vector3f(0,0,0), 2);
     }
     

@@ -44,7 +44,7 @@ public class AnimationLoader
             weights     3
                         17
         */
-        final int vertexSize = 14;
+        final int vertexSize = 16;
         final int floatSize = 4;
 
         float[] vertices = new float[mesh.mNumVertices() * vertexSize];
@@ -72,7 +72,7 @@ public class AnimationLoader
             //vertices[i++] = tangent.y();
             //vertices[i++] = tangent.z();
 
-            i += 6;
+            i += 8;
         }
 
         int[] indices = new int[mesh.mNumFaces() * 3];
@@ -99,12 +99,12 @@ public class AnimationLoader
 
                 int access = vw.mVertexId() * vertexSize + offset;
 
-                for (int j = 0; j < 3; j++)
+                for (int j = 0; j < 4; j++)
                 {
-                    if (vertices[access] == 0 && vertices[access + 3] == 0)
+                    if (vertices[access] == 0 && vertices[access + 4] == 0)
                     {
                         vertices[access] = b;
-                        vertices[access + 3] = vw.mWeight();
+                        vertices[access + 4] = vw.mWeight();
                         break;
                     } else
                     {
@@ -167,8 +167,8 @@ public class AnimationLoader
         glVertexAttribPointer(1, 2, GL_FLOAT, false, vertexSize * floatSize, 12);
         glVertexAttribPointer(2, 3, GL_FLOAT, false, vertexSize * floatSize, 20);
         //glVertexAttribPointer(3, 3, GL_FLOAT, false, vertexSize * floatSize, 32);
-        glVertexAttribPointer(3, 3, GL_FLOAT, false, vertexSize * floatSize, 32);
-        glVertexAttribPointer(4, 3, GL_FLOAT, false, vertexSize * floatSize, 44);
+        glVertexAttribPointer(3, 4, GL_FLOAT, false, vertexSize * floatSize, 32);
+        glVertexAttribPointer(4, 4, GL_FLOAT, false, vertexSize * floatSize, 48);
 
         int ibo = glGenBuffers();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
