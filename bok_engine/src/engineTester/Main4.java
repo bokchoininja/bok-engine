@@ -145,8 +145,9 @@ public class Main4 implements Runnable{
     
     private void create_player() {
         runner = new Material(loader.loadTextureS("blue.png"));
-        animatedModel = AnimationLoader.load(loader, "lpm17092024.fbx", runner.getTexture());
-        player = new PlayerA(animatedModel, new Vector3f(65,0,65), new Vector3f(0,0,0), 2);
+        texture = new ModelTexture(loader.loadTexture("blue"));
+        animatedModel = AnimationLoader.load(loader, "lpm17092024.fbx");
+        player = new PlayerA(animatedModel, texture, new Vector3f(65,0,65), new Vector3f(0,0,0), 2);
     }
 
     private void second_init() {
@@ -175,7 +176,7 @@ public class Main4 implements Runnable{
         for (Terrain terrain : allTerrains) {
             master_renderer.processTerrain(terrain);
         }
-        master_renderer.processAnimatedModel(player);
+        master_renderer.processAnimatedPlayer(player);
         master_renderer.render(allLights, camera);
         window.swapBuffers();
     }

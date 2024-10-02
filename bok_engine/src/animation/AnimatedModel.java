@@ -13,17 +13,15 @@ public class AnimatedModel
 {
     private final int vaoID;
     private int count;
-    private int textureID;
 
     Bone[] bones;
     AIAnimation[] animations;
     AINode root;
     
-    public AnimatedModel(int vaoID, int count, int textureID)
+    public AnimatedModel(int vaoID, int count)
     {
         this.vaoID = vaoID;
         this.count = count;
-        this.textureID = textureID;
     }
 
     public int getVaoID()
@@ -34,11 +32,6 @@ public class AnimatedModel
     public int getCount()
     {
         return count;
-    }
-
-    public int getTextureID()
-    {
-        return textureID;
     }
     
     public void updateAnimationBlended(int animationIndex, int animationIndex2, float time, float time2, float blend)

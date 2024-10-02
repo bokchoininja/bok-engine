@@ -51,6 +51,8 @@ public class MasterRendererT {
     private AnimationRenderer animationRenderer;
     private AnimatedEntity animatedEntity;
     
+    private List<AnimatedEntity> animated_entities = new ArrayList<AnimatedEntity>();
+    
     public MasterRendererT(Loader loader) {
         GLUtills.initOpenGLSettings();
         createProjectionMatrix();
@@ -100,8 +102,9 @@ public class MasterRendererT {
         animationShader.loadSkyColour(RED, GREEN, BLUE);
         animationShader.loadLights(lights);
         animationShader.loadViewMatrix(camera);
-        animationRenderer.setTransformationMatrix(animatedEntity);
+        //animationRenderer.setTransformationMatrix(animatedEntity);
         animationRenderer.render(animatedEntity);
+        animationRenderer.render(animated_entities);
         animationShader.stop();
     }
     
@@ -162,7 +165,11 @@ public class MasterRendererT {
         animationShader.stop();
     }
     
-    public void processAnimatedModel(AnimatedEntity animatedEntity) {
+    public void processAnimatedPlayer(AnimatedEntity animatedEntity) {
         this.animatedEntity = animatedEntity;
+    }
+    
+    public void processAnimatedEntity(AnimatedEntity animatedEntity) {
+        animated_entities.add(animatedEntity);
     }
 }

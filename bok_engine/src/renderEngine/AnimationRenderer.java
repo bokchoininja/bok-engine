@@ -6,9 +6,12 @@ import animation.AnimatedModel;
 import entities.AnimatedEntity;
 import entities.EntityT;
 import shaders.AnimationShader;
+import textures.ModelTexture;
 import toolbox.Maths;
 
 import static org.lwjgl.opengl.GL30.*;
+
+import java.util.List;
 
 public class AnimationRenderer
 {
@@ -21,22 +24,45 @@ public class AnimationRenderer
         setProjectionMatrix(projectionMatrix);
         shader.stop();
     }
-
-    public void render(AnimatedEntity animatedEntity)
+    
+    public void render(AnimatedEntity animated_entity)
     {
-        AnimatedModel model = animatedEntity.getAnimatedModel();
+        setTransformationMatrix(animated_entity);
+        AnimatedModel model = animated_entity.getAnimatedModel();
+        ModelTexture model_texture = animated_entity.getModel();
         shader.loadBoneTransforms(model.getBones());
         
         shader.loadShineVariables(10, 1);
         
         glBindVertexArray(model.getVaoID());
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, model.getTextureID());
+        glBindTexture(GL_TEXTURE_2D, model_texture.getID());
 
         glDrawElements(GL_TRIANGLES, model.getCount(), GL_UNSIGNED_INT, 0);
 
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    public void render(List<AnimatedEntity> animated_entities)
+    {
+        for(AnimatedEntity animated_entity : animated_entities) {
+            setTransformationMatrix(animated_entity);
+            AnimatedModel model = animated_entity.getAnimatedModel();
+            ModelTexture model_texture = animated_entity.getModel();
+            shader.loadBoneTransforms(model.getBones());
+            
+            shader.loadShineVariables(10, 1);
+            
+            glBindVertexArray(model.getVaoID());
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, model_texture.getID());
+    
+            glDrawElements(GL_TRIANGLES, model.getCount(), GL_UNSIGNED_INT, 0);
+    
+            glBindVertexArray(0);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
     }
 
     public void setProjectionMatrix(Matrix4f projectionMatrix)

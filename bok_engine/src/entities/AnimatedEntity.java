@@ -4,16 +4,19 @@ import org.joml.Vector3f;
 
 import animation.AnimatedModel;
 import models.TexturedModel;
+import textures.ModelTexture;
 
 public class AnimatedEntity {
     
     private AnimatedModel animatedModel;
+    private ModelTexture model;
     
     private Vector3f position;
     private Vector3f rotation;
     private float scale;
     
-    public AnimatedEntity(AnimatedModel animatedModel, Vector3f position, Vector3f rotation, float scale) {
+    public AnimatedEntity(AnimatedModel animatedModel, ModelTexture model, Vector3f position, Vector3f rotation, float scale) {
+        this.model = model;
         this.animatedModel = animatedModel;
         this.position = position;
         this.rotation = rotation;
@@ -47,6 +50,12 @@ public class AnimatedEntity {
     public AnimatedModel getAnimatedModel() {
         return animatedModel;
     }
+
+    public ModelTexture getModel() {
+        return model;
+    }
+    
+    
     
     
     

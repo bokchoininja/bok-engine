@@ -14,6 +14,7 @@ import engine.io.Input;
 import engine.io.Window;
 import models.TexturedModel;
 import terrains.Terrain;
+import textures.ModelTexture;
 
 public class PlayerA extends AnimatedEntity {
     
@@ -37,8 +38,8 @@ public class PlayerA extends AnimatedEntity {
     private List<AnimationElement> animation_list = new ArrayList<AnimationElement>();
 
 
-    public PlayerA(AnimatedModel animatedModel, Vector3f position, Vector3f rotation, float scale) {
-        super(animatedModel, position, rotation, scale);
+    public PlayerA(AnimatedModel animatedModel, ModelTexture model, Vector3f position, Vector3f rotation, float scale) {
+        super(animatedModel, model, position, rotation, scale);
         animation_list.add(new AnimationElement(0,0));
     }
 

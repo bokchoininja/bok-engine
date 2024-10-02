@@ -20,7 +20,7 @@ public class AnimationLoader
     private static List<Integer> vaos = new ArrayList<>();
     private static List<Integer> vbos = new ArrayList<>();
 
-    public static AnimatedModel load(Loader loader, String fileName, TextureT texture)
+    public static AnimatedModel load(Loader loader, String fileName)
     {
         AIScene scene = Assimp.aiImportFile("./res/models/" + fileName,
                 Assimp.aiProcess_Triangulate |
@@ -176,7 +176,7 @@ public class AnimationLoader
 
         glBindVertexArray(0);
 
-        AnimatedModel model = new AnimatedModel(vao, indices.length, texture.getID());
+        AnimatedModel model = new AnimatedModel(vao, indices.length);
         model.setBones(bones);
         model.setAnimations(animations);
         model.setRoot(scene.mRootNode());

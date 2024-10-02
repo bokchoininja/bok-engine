@@ -91,12 +91,16 @@ public class MainT3 implements Runnable{
     RawModel bok_club_model;
     RawModel title_model;
     RawModel tree_model;
+    RawModel house_model;
+    //RawModel zombie_model;
     ModelData data;
     ModelData test_person;
     ModelData bunny_data;
     ModelData bok_club_data;
     ModelData title_data;
     ModelData tree_data;
+    ModelData house_data;
+    //ModelData zombie_data;
     ModelTexture texture;
     ModelTexture texture_test;
     ModelTexture textureGrass;
@@ -121,12 +125,18 @@ public class MainT3 implements Runnable{
     AnimatedEntity animatedEntity;
     Material runner;
     
+    AnimatedModel zombie_model;
+    AnimatedEntity zombie_entity;
+    Material zombie;
+    
+    
     Random random = new Random();
     
     List<EntityT> allEntites = new ArrayList<EntityT>();
     List<Terrain> allTerrains = new ArrayList<Terrain>();
     List<GuiTexture> guis = new ArrayList<GuiTexture>();
     List<Light> allLights = new ArrayList<Light>();
+    List<AnimatedEntity> animated_entities = new ArrayList<AnimatedEntity>();
     GuiTexture gui;
     GuiRenderer guiRenderer;
     
@@ -148,9 +158,9 @@ public class MainT3 implements Runnable{
     
     
     private void create_player() {
-        runner = new Material(loader.loadTextureS("blue.png"));
-        animatedModel = AnimationLoader.load(loader, "lpm25092024_4.fbx", runner.getTexture());
-        player = new PlayerA(animatedModel, new Vector3f(65,0,65), new Vector3f(0,0,0), 2);
+        texture = new ModelTexture(loader.loadTexture("blue"));
+        animatedModel = AnimationLoader.load(loader, "lpm27092024_4.fbx");
+        player = new PlayerA(animatedModel, texture, new Vector3f(65,0,65), new Vector3f(0,0,0), 2);
     }
     
     private void create_guis() {
@@ -177,6 +187,32 @@ public class MainT3 implements Runnable{
                     new Vector3f(0.2f, 0.02f, 0.002f)));
         }
     }
+    
+    /*
+    private void create_zombie() {
+        zombie = new Material(loader.loadTextureS("zombie29092024.png"));
+        zombie_model = AnimationLoader.load(loader, "zombie29092024.fbx");
+        texture = new ModelTexture(loader.loadTexture("zombie29092024"));
+        float x = random.nextFloat() * 200;
+        float z = random.nextFloat() * 200;
+        float y = terrain.getHeightOfTerrain(x, z);
+        animated_entities.add(new AnimatedEntity(zombie_model, texture, new Vector3f(x,y,z), new Vector3f(0,0,0), 1f));
+    }*/
+    
+    /*
+    private void create_house() {
+        house_data = OBJFileLoader.loadOBJ("lph28092024");
+        house_model = loader.loadToVAO(house_data.getVertices(), house_data.getTextureCoords(), house_data.getNormals(), house_data.getIndices());
+        texture = new ModelTexture(loader.loadTexture("lph28092024"));
+        texturedModel = new TexturedModel(house_model, texture);
+        texture.setShineDamper(10);
+        texture.setReflectivity(1);
+        float x = random.nextFloat() * 200;
+        float z = random.nextFloat() * 200;
+        float y = terrain.getHeightOfTerrain(x, z);
+        allEntites.add(new EntityT(texturedModel, new Vector3f(x,y,z), 
+                new Vector3f(0f, random.nextFloat() * 180f, 0f), 4f));
+    }*/
     
     private void create_trees() {
         tree_data = OBJFileLoader.loadOBJ("ball_tree");
@@ -208,6 +244,7 @@ public class MainT3 implements Runnable{
                 new Vector3f(0, 210f, 0f), 5f));
     }
     
+    /*
     private void create_bok() {
     	bok_club_data = OBJFileLoader.loadOBJ("bok_club");
         bok_club_model = loader.loadToVAO(bok_club_data.getVertices(), bok_club_data.getTextureCoords(), bok_club_data.getNormals(), bok_club_data.getIndices());
@@ -220,7 +257,7 @@ public class MainT3 implements Runnable{
         float y = terrain.getHeightOfTerrain(x, z);
         allEntites.add(new EntityT(texturedModel, new Vector3f(x,y,z), 
                 new Vector3f(0, 0, 0f), 3f));
-    }
+    }*/
     
     /*
     private void create_bunny() {
@@ -331,7 +368,7 @@ public class MainT3 implements Runnable{
         create_terrains();
         create_trees();
         create_title();
-        create_bok();
+        //create_bok();
         create_person();
         create_dragons();
         create_grass();
@@ -340,9 +377,13 @@ public class MainT3 implements Runnable{
         create_lights();
         create_player();
         create_lamps();
+        //create_house();
+        //create_zombie();
         cameraT = new CameraT(player);
         master_renderer = new MasterRendererT(loader);
     }
+    
+    float time = 0f;
     
     private void second_loop() {
         player.move(terrain);
@@ -355,7 +396,12 @@ public class MainT3 implements Runnable{
         for (Terrain terrain : allTerrains) {
         	master_renderer.processTerrain(terrain);
         }
-        master_renderer.processAnimatedModel(player);
+        master_renderer.processAnimatedPlayer(player);
+        for (AnimatedEntity animated_entity : animated_entities) {
+            animated_entity.getAnimatedModel().updateAnimation(0, time++);
+            master_renderer.processAnimatedEntity(animated_entity);
+
+        }
         master_renderer.render(allLights, cameraT);
     }
     
