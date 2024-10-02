@@ -106,6 +106,7 @@ public class MasterRendererT {
         animationRenderer.render(animatedEntity);
         animationRenderer.render(animated_entities);
         animationShader.stop();
+        animated_entities.clear();
     }
     
     public void processTerrain(Terrain terrain) {
