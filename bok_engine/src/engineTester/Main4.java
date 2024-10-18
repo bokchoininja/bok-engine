@@ -146,7 +146,7 @@ public class Main4 implements Runnable{
     private void create_player() {
         runner = new Material(loader.loadTextureS("blue.png"));
         texture = new ModelTexture(loader.loadTexture("blue"));
-        animatedModel = AnimationLoader.load(loader, "lpm17092024.fbx");
+        animatedModel = AnimationLoader.load(loader, "lpm21092024.fbx");
         player = new PlayerA(animatedModel, texture, new Vector3f(65,0,65), new Vector3f(0,0,0), 2);
     }
 
