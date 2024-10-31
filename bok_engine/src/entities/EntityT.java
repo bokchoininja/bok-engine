@@ -79,6 +79,9 @@ public class EntityT {
         return rotation;
     }
     
+    public void setRotation(Vector3f rotation) {
+        this.rotation = rotation;
+    }
     
     
     

@@ -25,10 +25,15 @@ public class Window {
 	private static float delta;
 	private double mouseX, mouseY;
 	private static double mouseDY, mouseDX;
+	private double scrollY;
+	private static double scrollDY;
+    private static final float RED = 173/255f;
+    private static final float GREEN = 216/255f;
+    private static final float BLUE = 230/255f;
     
     public Window(int width, int height, String title) {
-        this.width = width;
-        this.height = height;
+        Window.width = width;
+        Window.height = height;
         this.title = title;
     }
     
@@ -93,9 +98,9 @@ public class Window {
             isResized = false;
             master_renderer.recreate_projection_matrix();
         }
+        GL11.glClearColor(RED, GREEN, BLUE, 1);
         GLFW.glfwPollEvents();
         frames++;
-        
         if (System.currentTimeMillis() > time + 1000) {
             GLFW.glfwSetWindowTitle(window, title + " FPS: " + frames + "");
             time = System.currentTimeMillis();
@@ -105,6 +110,7 @@ public class Window {
         currentFrameTime = getCurrentTime();
         delta = (currentFrameTime - lastFrameTime)/1000f;
         calculateMouseChange();
+        calculateScrollChange();
     }
     
     public void calculateMouseChange() {
@@ -114,6 +120,12 @@ public class Window {
     	mouseY = Input.getMouseY();
     	mouseDX = mouseX-oldMouseX;
     	mouseDY = mouseY-oldMouseY;
+    }
+    
+    public void calculateScrollChange() {
+        double oldScrollY = scrollY;
+        scrollY = Input.getScrollY();
+        scrollDY = scrollY-oldScrollY;
     }
     
     public static float getFrameTimeSeconds() {
@@ -189,6 +201,10 @@ public class Window {
 
 	public static double getMouseDX() {
 		return mouseDX;
+	}
+	
+	public static double getScrollDY() {
+	    return scrollDY;
 	}
     
     

@@ -31,6 +31,10 @@ public class Terrain {
     
     private float[][] heights;
     
+    private float[] vertices;
+    private int[] indices;
+    private float[] normals;
+    
     public Terrain(int gridX, int gridZ, Loader loader, TerrainTexturePack texturePack, TerrainTexture blendMap, String heightMap) {
         this.texturePack = texturePack;
         this.blendMap = blendMap;
@@ -112,6 +116,9 @@ public class Terrain {
                 indices[pointer++] = bottomRight;
             }
         }
+        this.vertices = vertices;
+        this.indices = indices;
+        this.normals = normals;
         return loader.loadToVAO(vertices, textureCoords, normals, indices);
     }
     
@@ -155,6 +162,19 @@ public class Terrain {
 	public TerrainTexture getBlendMap() {
 		return blendMap;
 	}
+
+    public float[] getVertices() {
+        return vertices;
+    }
+
+    public int[] getIndices() {
+        return indices;
+    }
+
+    public float[] getNormals() {
+        return normals;
+    }
+
     
     
     

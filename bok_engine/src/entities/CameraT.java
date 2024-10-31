@@ -23,7 +23,7 @@ public class CameraT {
     }
     
     public void move() {
-    	//calculateZoom();
+    	calculateZoom();
     	calculatePitch();
     	calculateAngleAroundPlayer();
     	float horizontalDistance = calculateHorizontalDistance();
@@ -48,8 +48,18 @@ public class CameraT {
         return roll;
     }
     
+    private void calculateZoom() {
+        double zoomLevel = Window.getScrollDY() * 1.5f;
+        if (distanceFromPlayer < 60 && zoomLevel < 0) {
+            distanceFromPlayer -= zoomLevel;
+        }
+        if (distanceFromPlayer > 0 && zoomLevel > 0) {
+            distanceFromPlayer -= zoomLevel;
+        }
+    }
+    
     private void calculateCameraPosition(float horizDistance, float verticDistance) {
-    	float theta = player.getRotation().y + angleAroundPlayer;
+        float theta = player.getRotation().y + angleAroundPlayer;
     	float offsetX = (float) (horizDistance * Math.sin(Math.toRadians(theta)));
     	float offsetZ = (float) (horizDistance * Math.cos(Math.toRadians(theta)));
     	position.x = player.getPosition().x - offsetX;
@@ -62,21 +72,21 @@ public class CameraT {
     }
     
     private float calculateVerticalDistance() {
-    	return (float) (distanceFromPlayer * Math.sin(Math.toRadians(pitch)) + 3);
+    	return (float) (distanceFromPlayer * Math.sin(Math.toRadians(pitch)) + 5);
     }
-    
-    /*
-    private void calculateZoom() {
-    	float zoomLevel = Mouse.getDWheel() * 0.1f;
-    	distanceFromPlayer -= zoomLevel;
-    }*/
     
     private void calculatePitch() {
     	if(Input.isButtonDown(1)) {
-    		double pitchChange = Window.getMouseDY() * 0.1f;
-    		pitch -= pitchChange;
+    		double pitchChange = Window.getMouseDY() * 0.15f;
+    		if (pitch < 90 && pitchChange < 0) {
+    		    pitch -= pitchChange;
+    		}
+            if (pitch > -90 && pitchChange > 0) {
+                pitch -= pitchChange;
+            }
     	}
     }
+    
     
     private void calculateAngleAroundPlayer() {
     	if(Input.isButtonDown(0)) {

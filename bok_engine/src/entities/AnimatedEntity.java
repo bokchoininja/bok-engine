@@ -54,8 +54,14 @@ public class AnimatedEntity {
     public ModelTexture getModel() {
         return model;
     }
-    
-    
+
+    public void setPosition(Vector3f position) {
+        this.position = position;
+    }
+
+    public void setRotation(Vector3f rotation) {
+        this.rotation = rotation;
+    }
     
     
     
