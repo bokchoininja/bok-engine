@@ -67,6 +67,14 @@ public class Input {
     public static double getMouseY() {
         return mouseY;
     }
+    
+    public static double getScrollX() {
+        return scrollX;
+    }
+    
+    public static double getScrollY() {
+        return scrollY;
+    }
 
     public GLFWKeyCallback getKeyboardCallback() {
         return keyboard;

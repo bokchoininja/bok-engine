@@ -19,9 +19,39 @@ public class AnimationLoader
 {
     private static List<Integer> vaos = new ArrayList<>();
     private static List<Integer> vbos = new ArrayList<>();
+    
+    private AnimatedModelData player_constant;
+    
+    private AIScene player_scene = loadScene("lpm11102024.fbx");
+    
+    public AnimationLoader(Loader loader) {
 
-    public static AnimatedModel load(Loader loader, String fileName)
-    {
+        player_constant = loadConstant(loader, player_scene);
+    }
+    
+    public AnimatedModel loadPlayer(Loader loader) {
+        int player_vao;
+        int player_indices_length;
+        Bone[] player_bones;
+        AIAnimation[] player_animations;
+        AINode player_root;
+        
+        AnimatedModel player_model;
+        
+        player_bones = load(loader, player_scene).getBones();
+        player_vao = player_constant.getVao();
+        player_indices_length = player_constant.getIndicesLength();
+        player_animations = player_constant.getAnimations();
+        player_root = player_constant.getRootNode();
+        
+        player_model = new AnimatedModel(player_vao, player_indices_length);
+        player_model.setBones(player_bones);
+        player_model.setAnimations(player_animations);
+        player_model.setRoot(player_root);
+        return player_model;
+    }
+    
+    public AIScene loadScene(String fileName) {
         AIScene scene = Assimp.aiImportFile("./res/models/" + fileName,
                 Assimp.aiProcess_Triangulate |
                         Assimp.aiProcess_GenSmoothNormals |
@@ -29,7 +59,11 @@ public class AnimationLoader
                         Assimp.aiProcess_CalcTangentSpace |
                         Assimp.aiProcess_JoinIdenticalVertices
         );
-
+        return scene;   
+    }
+    
+    public AnimatedModelData loadConstant(Loader loader, AIScene scene)
+    {
         assert scene != null;
         assert scene.mNumMeshes() == 1;
         assert scene.mNumAnimations() > 0;
@@ -121,14 +155,6 @@ public class AnimationLoader
 //                System.out.println();
 //        }
 
-        Bone[] bones = new Bone[mesh.mNumBones()];
-
-        for (int b = 0; b < mesh.mNumBones(); b++)
-        {
-            AIBone bone = AIBone.create(mesh.mBones().get(b));
-            bones[b] = new Bone(bone.mName().dataString(), Maths.convertMatrix(bone.mOffsetMatrix()));
-        }
-
         AIAnimation[] animations = new AIAnimation[scene.mNumAnimations()];
         for (int a = 0; a < animations.length; a++) {
             animations[a] = AIAnimation.create(scene.mAnimations().get(a));
@@ -176,12 +202,63 @@ public class AnimationLoader
 
         glBindVertexArray(0);
 
-        AnimatedModel model = new AnimatedModel(vao, indices.length);
-        model.setBones(bones);
-        model.setAnimations(animations);
-        model.setRoot(scene.mRootNode());
+        //AnimatedModel model = new AnimatedModel(vao, indices.length);
+        //model_vao = vao;
+        //model_indices_length = indices.length;
+        
+        //model_bones = bones;
+        //model_animations = animations;
+        //model_root = scene.mRootNode();
+        
+        //model.setBones(bones);
+        //model.setAnimations(animations);
+        //model.setRoot(scene.mRootNode());
 
-        return model;
+        //return model;
+        
+        return new AnimatedModelData(vao, indices.length, animations, scene.mRootNode());
+    }
+
+
+    public Bones load(Loader loader, AIScene scene)
+    {
+
+        assert scene != null;
+        assert scene.mNumMeshes() == 1;
+        assert scene.mNumAnimations() > 0;
+        AIMesh mesh = AIMesh.create(scene.mMeshes().get(0));
+
+//        for (int j = 1100 * vertexSize; j < 1101 * vertexSize; j++)
+//        {
+//            System.out.println(vertices[j]);
+//            if ((j + 1) % vertexSize == 0)
+//                System.out.println();
+//        }
+
+        Bone[] bones = new Bone[mesh.mNumBones()];
+
+        for (int b = 0; b < mesh.mNumBones(); b++)
+        {
+            AIBone bone = AIBone.create(mesh.mBones().get(b));
+            bones[b] = new Bone(bone.mName().dataString(), Maths.convertMatrix(bone.mOffsetMatrix()));
+        }
+
+
+        //AnimatedModel model = new AnimatedModel(vao, indices.length);
+        //model_vao = vao;
+        //model_indices_length = indices.length;
+        
+        //model_bones = bones;
+        //model_animations = animations;
+        //model_root = scene.mRootNode();
+        
+        //model.setBones(bones);
+        //model.setAnimations(animations);
+        //model.setRoot(scene.mRootNode());
+
+        //return model;
+        
+        return new Bones(bones);
     }
 
     public void terminate()
@@ -191,4 +268,6 @@ public class AnimationLoader
         for (int vbo : vbos)
             glDeleteBuffers(vbo);
     }
+    
+    
 }

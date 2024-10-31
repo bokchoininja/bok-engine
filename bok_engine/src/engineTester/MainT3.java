@@ -1,12 +1,18 @@
 package engineTester;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
+
+import com.bulletphysics.dynamics.RigidBody;
+import com.bulletphysics.linearmath.Transform;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.glfw.GLFW.*;
@@ -15,7 +21,9 @@ import animation.AnimatedModel;
 import animation.AnimationLoader;
 import engine.io.Input;
 import engine.io.Window;
+import entities.AnimatedEnemy;
 import entities.AnimatedEntity;
+import entities.AnimatedPhysicalEntity;
 import entities.CameraT;
 import entities.EntityT;
 import entities.Light;
@@ -24,22 +32,32 @@ import models.RawModel;
 import models.TexturedModel;
 import objConverter.ModelData;
 import objConverter.OBJFileLoader;
+import physics.PhysicalEntity;
+import physics.Physics;
 import renderEngine.Loader;
 import renderEngine.MasterRendererT;
 import renderEngine.OBJLoader;
+import spatial.SpatialHashing;
 import terrains.Terrain;
 import texture.Material;
 import textures.ModelTexture;
 import textures.TerrainTexture;
 import textures.TerrainTexturePack;
 import entities.PlayerT;
+import entities.Zombie;
 import guis.GuiRenderer;
 import guis.GuiTexture;
 
+import com.bulletphysics.collision.shapes.BoxShape;
+import com.bulletphysics.collision.shapes.CollisionShape;
+import com.bulletphysics.collision.shapes.CylinderShape;
+
 public class MainT3 implements Runnable{
     private Thread game;
-    private Window window;
+    private static Window window;
     private final int WIDTH = 1280, HEIGHT = 720;
+    
+    private static final double TARGET_FRAME_TIME = 1/60.0;
     
     public void start() {
         game = new Thread(this, "game");
@@ -57,6 +75,7 @@ public class MainT3 implements Runnable{
         //init();
         second_init();
         while(!window.shouldClose() && !Input.isKeyDown(GLFW.GLFW_KEY_ESCAPE)) {
+            double startTime = GLFW.glfwGetTime();
             second_loop();
             if (Input.isKeyDown(GLFW.GLFW_KEY_F11)) {
                 window.setFullscreen(!window.isFullscreen());
@@ -64,11 +83,13 @@ public class MainT3 implements Runnable{
             //if (Input.isButtonDown(GLFW.GLFW_MOUSE_BUTTON_LEFT)) window.mouseState(true);
             //window.mouseState(true);
             //if (Input.isKeyDown(GLFW.GLFW_KEY_ESCAPE)) return;
+            /*
             try {
-                Thread.sleep(16);
+                Thread.sleep(1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            */
             /*
             if (glfwGetWindowAttrib(window.getWindow(), GLFW_FOCUSED) == GLFW_TRUE) {
                 // The window is focused
@@ -78,12 +99,25 @@ public class MainT3 implements Runnable{
                 System.out.println("Window is not focused.");
             }*/
             window.swapBuffers();
+            double endTime = GLFW.glfwGetTime();
+            double frameTime = endTime - startTime;
+            if (frameTime < TARGET_FRAME_TIME) {
+                try {
+                    Thread.sleep((long) ((TARGET_FRAME_TIME - frameTime) * 1000));
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            
         }
         close2();
     }
+    
+    
 
     Loader loader = new Loader();
     MasterRendererT master_renderer;
+    
     
     RawModel model;
     RawModel person_model;
@@ -92,6 +126,8 @@ public class MainT3 implements Runnable{
     RawModel title_model;
     RawModel tree_model;
     RawModel house_model;
+    RawModel cube_model;
+    RawModel lamp_model;
     //RawModel zombie_model;
     ModelData data;
     ModelData test_person;
@@ -100,7 +136,9 @@ public class MainT3 implements Runnable{
     ModelData title_data;
     ModelData tree_data;
     ModelData house_data;
+    ModelData lamp_data;
     //ModelData zombie_data;
+    ModelData cube_data;
     ModelTexture texture;
     ModelTexture texture_test;
     ModelTexture textureGrass;
@@ -129,14 +167,20 @@ public class MainT3 implements Runnable{
     AnimatedEntity zombie_entity;
     Material zombie;
     
+    AnimationLoader animation_loader;
+    
+    Physics physics;
+    SpatialHashing<AnimatedEnemy> spatial_hashing = new SpatialHashing<>(10.0f);
     
     Random random = new Random();
     
-    List<EntityT> allEntites = new ArrayList<EntityT>();
+    List<EntityT> allEntities = new ArrayList<EntityT>();
+    //List<PhysicalEntity> physical_entities = new ArrayList<PhysicalEntity>();
     List<Terrain> allTerrains = new ArrayList<Terrain>();
     List<GuiTexture> guis = new ArrayList<GuiTexture>();
     List<Light> allLights = new ArrayList<Light>();
-    List<AnimatedEntity> animated_entities = new ArrayList<AnimatedEntity>();
+    //List<AnimatedEntity> animated_entities = new ArrayList<AnimatedEntity>();
+    List<Zombie> zombies = new ArrayList<Zombie>();
     GuiTexture gui;
     GuiRenderer guiRenderer;
     
@@ -159,8 +203,10 @@ public class MainT3 implements Runnable{
     
     private void create_player() {
         texture = new ModelTexture(loader.loadTexture("blue"));
-        animatedModel = AnimationLoader.load(loader, "lpm27092024_4.fbx");
-        player = new PlayerA(animatedModel, texture, new Vector3f(65,0,65), new Vector3f(0,0,0), 2);
+        animatedModel = animation_loader.loadPlayer(loader);
+        player = new PlayerA(animatedModel, texture, new Vector3f(65,10,65), new Vector3f(0,0,0), 2);
+        physics.add_player(player);
+        //spatial_hashing.insert(player, 65, 10, 65);
     }
     
     private void create_guis() {
@@ -170,49 +216,25 @@ public class MainT3 implements Runnable{
     }
     
     private void create_lamps() {
-        tree_data = OBJFileLoader.loadOBJ("lamp");
-        tree_model = loader.loadToVAO(tree_data.getVertices(), tree_data.getTextureCoords(), tree_data.getNormals(), tree_data.getIndices());
+        lamp_data = OBJFileLoader.loadOBJ("lamp");
+        lamp_model = loader.loadToVAO(lamp_data.getVertices(), lamp_data.getTextureCoords(), lamp_data.getNormals(), lamp_data.getIndices());
         texture = new ModelTexture(loader.loadTexture("lamp"));
-        texturedModel = new TexturedModel(tree_model, texture);
+        texturedModel = new TexturedModel(lamp_model, texture);
         texture.setShineDamper(10);
         texture.setReflectivity(1);
-        for (int i = 0; i < 10; i++) {
-            float x = random.nextFloat() * 200;
-            float z = random.nextFloat() * 200;
+        for (int i = 0; i < 14; i++) {
+            float x = random.nextFloat() * 800;
+            float z = random.nextFloat() * 800;
             float y = terrain.getHeightOfTerrain(x, z);
-            allEntites.add(new EntityT(texturedModel, new Vector3f(x,y,z), 
-                    new Vector3f(0f, random.nextFloat() * 180f, 0f), 1f));
+            CollisionShape shape = new CylinderShape(new javax.vecmath.Vector3f(1f, 10, 1f));
+            PhysicalEntity lamp = new PhysicalEntity(texturedModel, new Vector3f(x,y,z), 
+                    new Vector3f(0f, random.nextFloat() * 180f, 0f), 1f, shape, 5f);
             allLights.add(new Light(new Vector3f(x,y+6,z), 
                     new Vector3f(random.nextFloat(),random.nextFloat(),random.nextFloat()).normalize(), 
                     new Vector3f(0.2f, 0.02f, 0.002f)));
+            physics.add_static_physical_entity(lamp);
         }
     }
-    
-    /*
-    private void create_zombie() {
-        zombie = new Material(loader.loadTextureS("zombie29092024.png"));
-        zombie_model = AnimationLoader.load(loader, "zombie29092024.fbx");
-        texture = new ModelTexture(loader.loadTexture("zombie29092024"));
-        float x = random.nextFloat() * 200;
-        float z = random.nextFloat() * 200;
-        float y = terrain.getHeightOfTerrain(x, z);
-        animated_entities.add(new AnimatedEntity(zombie_model, texture, new Vector3f(x,y,z), new Vector3f(0,0,0), 1f));
-    }*/
-    
-    /*
-    private void create_house() {
-        house_data = OBJFileLoader.loadOBJ("lph28092024");
-        house_model = loader.loadToVAO(house_data.getVertices(), house_data.getTextureCoords(), house_data.getNormals(), house_data.getIndices());
-        texture = new ModelTexture(loader.loadTexture("lph28092024"));
-        texturedModel = new TexturedModel(house_model, texture);
-        texture.setShineDamper(10);
-        texture.setReflectivity(1);
-        float x = random.nextFloat() * 200;
-        float z = random.nextFloat() * 200;
-        float y = terrain.getHeightOfTerrain(x, z);
-        allEntites.add(new EntityT(texturedModel, new Vector3f(x,y,z), 
-                new Vector3f(0f, random.nextFloat() * 180f, 0f), 4f));
-    }*/
     
     private void create_trees() {
         tree_data = OBJFileLoader.loadOBJ("ball_tree");
@@ -221,12 +243,14 @@ public class MainT3 implements Runnable{
         texturedModel = new TexturedModel(tree_model, texture);
         texture.setShineDamper(10);
         texture.setReflectivity(1);
-        for (int i = 0; i < 10; i++) {
-            float x = random.nextFloat() * 200;
-            float z = random.nextFloat() * 200;
+        CollisionShape shape = new CylinderShape(new javax.vecmath.Vector3f(1.5f,5,1.5f));
+        for (int i = 0; i < 50; i++) {
+            float x = random.nextFloat() * 800;
+            float z = random.nextFloat() * 800;
             float y = terrain.getHeightOfTerrain(x, z);
-            allEntites.add(new EntityT(texturedModel, new Vector3f(x,y,z), 
-                    new Vector3f(0f, random.nextFloat() * 180f, 0f), 2f));
+            PhysicalEntity tree = new PhysicalEntity(texturedModel, new Vector3f(x,y,z), 
+                    new Vector3f(0f, random.nextFloat() * 180f, 0f), 2f, shape, 5f);
+            physics.add_static_physical_entity(tree);
         }
     }
     
@@ -240,24 +264,9 @@ public class MainT3 implements Runnable{
         float x = 90;
         float z = 75;
         float y = terrain.getHeightOfTerrain(x, z);
-        allEntites.add(new EntityT(texturedModel, new Vector3f(x,y,z), 
+        allEntities.add(new EntityT(texturedModel, new Vector3f(x,y,z), 
                 new Vector3f(0, 210f, 0f), 5f));
     }
-    
-    /*
-    private void create_bok() {
-    	bok_club_data = OBJFileLoader.loadOBJ("bok_club");
-        bok_club_model = loader.loadToVAO(bok_club_data.getVertices(), bok_club_data.getTextureCoords(), bok_club_data.getNormals(), bok_club_data.getIndices());
-        texture = new ModelTexture(loader.loadTexture("bok_club"));
-        texturedModel = new TexturedModel(bok_club_model, texture);
-        texture.setShineDamper(10);
-        texture.setReflectivity(1);
-        float x = 75;
-        float z = 100;
-        float y = terrain.getHeightOfTerrain(x, z);
-        allEntites.add(new EntityT(texturedModel, new Vector3f(x,y,z), 
-                new Vector3f(0, 0, 0f), 3f));
-    }*/
     
     /*
     private void create_bunny() {
@@ -281,7 +290,7 @@ public class MainT3 implements Runnable{
         float x = 100;
         float z = 75;
         float y = terrain.getHeightOfTerrain(x, z);
-        allEntites.add(new EntityT(texturedModel, new Vector3f(x,y,z), 
+        allEntities.add(new EntityT(texturedModel, new Vector3f(x,y,z), 
                 new Vector3f(0, 0, 0f), 10f));
     }
     
@@ -295,7 +304,7 @@ public class MainT3 implements Runnable{
         float x = 75;
         float z = 75;
         float y = terrain.getHeightOfTerrain(x, z);
-        allEntites.add(new EntityT(texturedModel, new Vector3f(x,y,z), 
+        allEntities.add(new EntityT(texturedModel, new Vector3f(x,y,z), 
                 new Vector3f(0, 0, 0f), 1f));
     }
     
@@ -304,11 +313,11 @@ public class MainT3 implements Runnable{
         		new ModelTexture(loader.loadTexture("grassTexture")));
         grass.getTexture().setHasTransparency(true);
         grass.getTexture().setUseFakeLighting(true);
-        for (int i = 0; i < 100; i++) {
-            float x = random.nextFloat() * 200;
-            float z = random.nextFloat() * 200;
+        for (int i = 0; i < 400; i++) {
+            float x = random.nextFloat() * 800;
+            float z = random.nextFloat() * 800;
             float y = terrain.getHeightOfTerrain(x, z);
-            allEntites.add(new EntityT(grass, new Vector3f(x,y,z),
+            allEntities.add(new EntityT(grass, new Vector3f(x,y,z),
                     new Vector3f(0f, 0f, 0f), 3f));
         }
     }
@@ -320,11 +329,11 @@ public class MainT3 implements Runnable{
         		fernTextureAtlas);
     	fern.getTexture().setHasTransparency(true);
     	fern.getTexture().setUseFakeLighting(true);
-        for (int i = 0; i < 100; i++) {
-            float x = random.nextFloat() * 200;
-            float z = random.nextFloat() * 200;
+        for (int i = 0; i < 200; i++) {
+            float x = random.nextFloat() * 800;
+            float z = random.nextFloat() * 800;
             float y = terrain.getHeightOfTerrain(x, z);
-            allEntites.add(new EntityT(fern, random.nextInt(4), new Vector3f(x,y,z), 
+            allEntities.add(new EntityT(fern, random.nextInt(4), new Vector3f(x,y,z), 
                     new Vector3f(0f, 0f, 0f), 1f));
         }
     }
@@ -334,11 +343,11 @@ public class MainT3 implements Runnable{
         		new ModelTexture(loader.loadTexture("flower")));
     	flower.getTexture().setHasTransparency(true);
     	flower.getTexture().setUseFakeLighting(true);
-        for (int i = 0; i < 100; i++) {
-            float x = random.nextFloat() * 200;
-            float z = random.nextFloat() * 200;
+        for (int i = 0; i < 200; i++) {
+            float x = random.nextFloat() * 800;
+            float z = random.nextFloat() * 800;
             float y = terrain.getHeightOfTerrain(x, z);
-            allEntites.add(new EntityT(flower, new Vector3f(x,y,z), 
+            allEntities.add(new EntityT(flower, new Vector3f(x,y,z), 
                     new Vector3f(0f, 0f, 0f), 3f));
         }
     }
@@ -354,55 +363,113 @@ public class MainT3 implements Runnable{
     	terrain = new Terrain(0,0,loader,texturePack, blendMap, "heightMap");
         allTerrains.add(terrain);
     }
+    
+    private void create_test_sphere() {
+        cube_data = OBJFileLoader.loadOBJ("cube");
+        cube_model = loader.loadToVAO(cube_data.getVertices(), cube_data.getTextureCoords(), cube_data.getNormals(), cube_data.getIndices());
+        texture = new ModelTexture(loader.loadTexture("path_texture"));
+        texturedModel = new TexturedModel(cube_model, texture);
+        texture.setShineDamper(10);
+        texture.setReflectivity(1);
+        for (int i = 0; i < 10; i++) {
+            float x = random.nextFloat() * 200;
+            float z = random.nextFloat() * 200;
+            //float y = terrain.getHeightOfTerrain(x, z) + 20;
+            float y = random.nextFloat() * 200 + 50;
+            PhysicalEntity physical_entity = new PhysicalEntity(texturedModel, new Vector3f(x,y,z), 
+                    new Vector3f(0, 0, 0f), 5f);
+            physics.add_physical_entity(physical_entity);
+        }
+    }
+    
+    private void create_test_sphere2() {
+        cube_data = OBJFileLoader.loadOBJ("cube");
+        cube_model = loader.loadToVAO(cube_data.getVertices(), cube_data.getTextureCoords(), cube_data.getNormals(), cube_data.getIndices());
+        texture = new ModelTexture(loader.loadTexture("path_texture"));
+        texturedModel = new TexturedModel(cube_model, texture);
+        texture.setShineDamper(10);
+        texture.setReflectivity(1);
+        for (int i = 0; i < 100; i++) {
+            float x = random.nextFloat() * 200;
+            float z = random.nextFloat() * 200;
+            float y = terrain.getHeightOfTerrain(x, z);
+            //float y = random.nextFloat() * 200 + 50;
+            PhysicalEntity physical_entity = new PhysicalEntity(texturedModel, new Vector3f(x,y,z), 
+                    new Vector3f(0, 0, 0f), 5f, 0, new javax.vecmath.Vector3f(0,0,0));
+            physics.add_physical_entity(physical_entity);
+        }
+    }
 
     private void second_init() {
         window = new Window(WIDTH, HEIGHT, "bok survival");
         window.setBackgroundColor(173/255f, 216/255f, 230/255f);
         window.create();
-        model = OBJLoader.loadObjModel("dragon", loader);
-        texture = new ModelTexture(loader.loadTexture("blue"));
-        texturedModel = new TexturedModel(model, texture);
-        texture.setShineDamper(10);
-        texture.setReflectivity(1);
-        entity = new EntityT(texturedModel, new Vector3f(0,0,-10), new Vector3f(0,0,0),1);
         create_terrains();
+        physics = new Physics(terrain);
         create_trees();
         create_title();
-        //create_bok();
         create_person();
         create_dragons();
         create_grass();
         create_fern();
         create_flower();
         create_lights();
-        create_player();
         create_lamps();
-        //create_house();
-        //create_zombie();
-        cameraT = new CameraT(player);
+        
+        animation_loader = new AnimationLoader(loader);
         master_renderer = new MasterRendererT(loader);
+        create_test_sphere();
+        create_test_sphere2();
+        create_player();
+        cameraT = new CameraT(player);
     }
     
-    float time = 0f;
+    int step = 0;
     
     private void second_loop() {
         player.move(terrain);
     	cameraT.move();
         
         window.update(master_renderer);
-        for (EntityT entity : allEntites) {
+        for (EntityT entity : allEntities) {
+            master_renderer.processEntity(entity);
+        }
+        for (PhysicalEntity entity : physics.get_physical_entities()) {
             master_renderer.processEntity(entity);
         }
         for (Terrain terrain : allTerrains) {
         	master_renderer.processTerrain(terrain);
         }
         master_renderer.processAnimatedPlayer(player);
-        for (AnimatedEntity animated_entity : animated_entities) {
-            animated_entity.getAnimatedModel().updateAnimation(0, time++);
-            master_renderer.processAnimatedEntity(animated_entity);
-
+        for (Zombie zombie : zombies) {
+            zombie.move(terrain);
+            master_renderer.processAnimatedEntity(zombie);
+        }
+        for (PhysicalEntity entity : physics.getStaticPhysicalEntities()) {
+            master_renderer.processEntity(entity);
         }
         master_renderer.render(allLights, cameraT);
+        physics.logic();
+        // Batch update multiple objects
+        if (step%6 == 0) {
+            for (Zombie zombie : zombies) {
+                zombie.setAgro(false);
+            }
+            Map<AnimatedEnemy, float[]> updates = new HashMap<>();
+            for (Zombie zombie : zombies) {
+                updates.put(zombie, new float[] {zombie.getPosition().x, zombie.getPosition().y, zombie.getPosition().z});
+            }
+            //updates.put(player, new float[] {player.getPosition().x, player.getPosition().y, player.getPosition().z});
+            Set<AnimatedEnemy> updatedObjects = spatial_hashing.batchUpdatePositions(updates);
+            List<AnimatedEnemy> nearbyObjects = spatial_hashing.findNearby(player.getPosition().x,
+                    player.getPosition().y,
+                    player.getPosition().z, 
+                    40.0f);
+            for (AnimatedEnemy enemy : nearbyObjects) {
+                enemy.setAgro(true);
+            }
+        }
+        step++;
     }
     
     private void close2() {
@@ -417,7 +484,34 @@ public class MainT3 implements Runnable{
     }
 
     public static void main(String[] args) {
-        new MainT3().start();
+        MainT3 main = new MainT3();
+        main.start();
+        //FocusedMulti fm = new FocusedMulti(main.window);
+        //fm.start();
     }
+}
 
+class FocusedMulti implements Runnable {
+    
+    private Thread focused;
+    private Window window;
+    
+    public FocusedMulti(Window window) {
+        this.window = window;
+    }
+    
+    public void start() {
+        focused = new Thread(this, "focused");
+        focused.start();
+    }
+    
+    public void run() {
+        if (glfwGetWindowAttrib(window.getWindow(), GLFW_FOCUSED) == GLFW_TRUE) {
+            // The window is focused
+            System.out.println("Window is focused.");
+        } else {
+            // The window is not focused
+            System.out.println("Window is not focused.");
+        }
+    }
 }
